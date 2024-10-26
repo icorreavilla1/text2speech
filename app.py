@@ -2,94 +2,77 @@ import streamlit as st
 import os
 import time
 import glob
-import os
 from gtts import gTTS
 from PIL import Image
 import base64
 
-st.title("Conversión de Texto a Audio")
-image = Image.open('gato_raton.png')
-st.image(image, width=350)
+# Título y subtítulo principal
+st.title("🦊 Conversión de Texto a Audio")
+st.subheader("Conviértete en el narrador de una fábula mágica 🌙")
+
+# Imagen destacada de la aplicación
+image = Image.open('fabula.png')  # Asegúrate de tener una imagen de fábula atractiva
+st.image(image, use_column_width=True)
+
+# Configuración de la barra lateral
 with st.sidebar:
-    st.subheader("Esrcibe y/o selecciona texto para ser escuchado.")
+    st.subheader("💬 Introduce o selecciona el texto para escuchar")
+    st.write("Selecciona el idioma y escucha la historia en audio.")
 
-
-try:
+# Crear la carpeta temporal para los archivos de audio
+if not os.path.exists("temp"):
     os.mkdir("temp")
-except:
-    pass
 
-st.subheader("Una pequeña Fábula.")
-st.write('¡Ay! -dijo el ratón-. El mundo se hace cada día más pequeño. Al principio era tan grande que le tenía miedo. '  
-         ' Corría y corría y por cierto que me alegraba ver esos muros, a diestra y siniestra, en la distancia. ' 
-         ' Pero esas paredes se estrechan tan rápido que me encuentro en el último cuarto y ahí en el rincón está '  
-         ' la trampa sobre la cual debo pasar. Todo lo que debes hacer es cambiar de rumbo dijo el gato...y se lo comió. ' 
-         '  '
-         ' Franz Kafka.'
-        
-        )
-           
-st.markdown(f"Quieres escucharlo?, copia el texto")
-text = st.text_area("Ingrese El texto a escuchar.")
+# Nueva fábula para mostrar
+st.subheader("🌌 Una Fábula de la Luna y la Noche 🌌")
+st.write(
+    "Había una vez una Luna que cada noche brillaba más intensamente. Los animales nocturnos, maravillados, "
+    "se reunían para admirarla. Pero, un día, la Noche le dijo: "
+    "'Querida Luna, ¿por qué brillas tan fuerte?'. "
+    "La Luna respondió: 'Porque quiero guiar a quienes buscan en la oscuridad'. "
+    "Y desde entonces, la Luna ilumina, y los animales siguen su luz en silencio. "
+)
 
-tld='com'
-option_lang = st.selectbox(
-    "Selecciona el lenguaje",
-    ("Español", "English"))
-if option_lang=="Español" :
-    lg='es'
-if option_lang=="English" :
-    lg='en'
+st.markdown("### ¿Te gustaría escuchar esta historia? Copia el texto o introduce el tuyo propio. ✨")
+text = st.text_area("Introduce el texto aquí:")
 
-def text_to_speech(text, tld,lg):
+# Selección de idioma
+option_lang = st.selectbox("🌍 Selecciona el idioma", ["Español", "English"])
+language_code = 'es' if option_lang == "Español" else 'en'
+
+# Función de conversión de texto a voz
+def text_to_speech(text, language_code):
+    tts = gTTS(text, lang=language_code)
+    file_name = text[:15] if len(text) > 15 else "audio"
+    tts.save(f"temp/{file_name}.mp3")
+    return file_name
+
+# Botón para convertir a audio
+if st.button("🎙️ Convertir a Audio"):
+    file_name = text_to_speech(text, language_code)
+    audio_path = f"temp/{file_name}.mp3"
+    audio_file = open(audio_path, "rb")
+    audio_bytes = audio_file.read()
     
-    tts = gTTS(text,lang=lg) # tts = gTTS(text,'en', tld, slow=False)
-    try:
-        my_file_name = text[0:20]
-    except:
-        my_file_name = "audio"
-    tts.save(f"temp/{my_file_name}.mp3")
-    return my_file_name, text
-
-
-#display_output_text = st.checkbox("Verifica el texto")
-
-if st.button("convertir a Audio"):
-     result, output_text = text_to_speech(text, 'com',lg)#'tld
-     audio_file = open(f"temp/{result}.mp3", "rb")
-     audio_bytes = audio_file.read()
-     st.markdown(f"## Tú audio:")
-     st.audio(audio_bytes, format="audio/mp3", start_time=0)
-
-     #if display_output_text:
-     
-     #st.write(f" {output_text}")
+    st.markdown("### Tu audio 🎧:")
+    st.audio(audio_bytes, format="audio/mp3")
     
-#if st.button("ElevenLAabs",key=2):
-#     from elevenlabs import play
-#     from elevenlabs.client import ElevenLabs
-#     client = ElevenLabs(api_key="a71bb432d643bbf80986c0cf0970d91a", # Defaults to ELEVEN_API_KEY)
-#     audio = client.generate(text=f" {output_text}",voice="Rachel",model="eleven_multilingual_v1")
-#     audio_file = open(f"temp/{audio}.mp3", "rb")
+    # Descargar archivo de audio
+    def download_audio(bin_file, label="Descargar Audio"):
+        with open(bin_file, "rb") as file:
+            data = file.read()
+            bin_str = base64.b64encode(data).decode()
+            href = f'<a href="data:application/octet-stream;base64,{bin_str}" download="{os.path.basename(bin_file)}">{label}</a>'
+            return href
+    
+    st.markdown(download_audio(audio_path), unsafe_allow_html=True)
 
-     with open(f"temp/{result}.mp3", "rb") as f:
-         data = f.read()
+# Limpieza de archivos temporales
+def remove_files(days_old=7):
+    now = time.time()
+    for file in glob.glob("temp/*.mp3"):
+        if os.stat(file).st_mtime < now - days_old * 86400:
+            os.remove(file)
 
-     def get_binary_file_downloader_html(bin_file, file_label='File'):
-        bin_str = base64.b64encode(data).decode()
-        href = f'<a href="data:application/octet-stream;base64,{bin_str}" download="{os.path.basename(bin_file)}">Download {file_label}</a>'
-        return href
-     st.markdown(get_binary_file_downloader_html("audio.mp3", file_label="Audio File"), unsafe_allow_html=True)
+remove_files()
 
-def remove_files(n):
-    mp3_files = glob.glob("temp/*mp3")
-    if len(mp3_files) != 0:
-        now = time.time()
-        n_days = n * 86400
-        for f in mp3_files:
-            if os.stat(f).st_mtime < now - n_days:
-                os.remove(f)
-                print("Deleted ", f)
-
-
-remove_files(7)
