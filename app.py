@@ -11,7 +11,7 @@ st.title("🦊 Conversión de Texto a Audio")
 st.subheader("Conviértete en el narrador de una fábula mágica 🌙")
 
 # Imagen destacada de la aplicación
-image = Image.open('fabula.png')  # Asegúrate de tener una imagen de fábula atractiva
+image = Image.open('zorroluna.png')  # Asegúrate de tener una imagen de fábula atractiva
 st.image(image, use_column_width=True)
 
 # Configuración de la barra lateral
